@@ -1,3 +1,4 @@
+import time
 from typing import Callable, NamedTuple
 from rich.prompt import Prompt
 from rich.console import Console
@@ -106,6 +107,7 @@ class Sync:
             for task in tasks:
                 task.command()
                 progress.advance(task.task)
+                time.sleep(5)
 
                 completed = sum(task.completed for task in progress.tasks)
                 total_progress.update(total_task, completed=completed)
