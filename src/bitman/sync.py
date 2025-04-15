@@ -99,5 +99,5 @@ class Sync:
         with Live(progress_table, refresh_per_second=10):
             for task in tasks:
                 task.command()
-                progress.advance(task.task)
                 time.sleep(5)
+                progress.advance(task.task)
