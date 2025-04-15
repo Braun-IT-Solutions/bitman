@@ -73,7 +73,7 @@ class Sync:
 
         progress = Progress(
             "{task.description}",
-            SpinnerColumn()
+            SpinnerColumn(finished_text='✔')
         )
 
         tasks: list[TaskInfo] = []
