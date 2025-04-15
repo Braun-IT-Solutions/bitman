@@ -13,7 +13,7 @@ class Yay(PackageManager):
             self._console.print(
                 '[red]Package manager [bold]yay[/bold] is currently not installed[/red]')
             # TODO: install yay via git clone & makepkg
-            raise 'yay not installed'
+            raise YayNotInstalledException()
 
         result = subprocess.run(
             ['yay', '-S', '--noconfirm', *packages],
@@ -28,3 +28,7 @@ class Yay(PackageManager):
         pacman = Pacman()
         installed_packages = pacman.foreign_installed_packages()
         return 'yay' in installed_packages
+
+
+class YayNotInstalledException(BaseException):
+    pass
