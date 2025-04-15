@@ -14,6 +14,17 @@ class Pacman:
         )
         result.check_returncode()
 
+    def remove_packages(self, packages: list[str]) -> None:
+        """Removes the given packages"""
+        result = subprocess.run(
+            ['pacman', '-R', '--noconfirm', *packages],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        result.check_returncode()
+
     def explicitly_installed_packages(self) -> Generator[str, None, None]:
         """Yields all explicitly installed packages (packages which weren't installed as a dependency)"""
         result = subprocess.run(

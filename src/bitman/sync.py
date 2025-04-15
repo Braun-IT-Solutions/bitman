@@ -1,4 +1,10 @@
-from typing import NamedTuple
+from typing import Callable, NamedTuple
+from rich.prompt import Prompt
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TaskID
+from rich.panel import Panel
+from rich.table import Table
+from rich.live import Live
 from bitman.config.system_config import SystemConfig
 from bitman.pacman import Pacman
 
@@ -9,10 +15,16 @@ class SyncStatus(NamedTuple):
     missing_aur: list[str]
 
 
+class TaskInfo(NamedTuple):
+    task: TaskID
+    command: Callable[[None], None]
+
+
 class Sync:
     def __init__(self, system_config: SystemConfig, pacman: Pacman):
         self._system_config = system_config
         self._pacman = pacman
+        self._console = Console()
 
     def status(self) -> SyncStatus:
         """
@@ -31,3 +43,67 @@ class Sync:
         )
 
         return SyncStatus(additional_packages, missing_arch_packages, missing_aur_packages)
+
+    def run(self) -> None:
+        """Runs a sync which will remove additional and install missing packages"""
+        status = self.status()
+
+        if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
+            self._console.print('All packages are in sync, nothing to do', style='green')
+
+        if len(status.missing_arch) > 0 or len(status.missing_aur) > 0:
+            self._console.print('The following packages will be installed:', style='bold')
+            self._console.print(
+                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
+            self._console.print(*['[bold]·[/bold] ' + line +
+                                  ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
+
+        if len(status.additional) > 0:
+            self._console.print('The following packages will be removed:', style='red')
+            self._console.print(
+                *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
+
+        answer = Prompt.ask('Do you want to continue?', choices=[
+                            'yes', 'no'], default='yes', case_sensitive=False)
+        if answer != 'yes':
+            return
+
+        progress = Progress(
+            "{task.description}",
+            SpinnerColumn(),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%")
+        )
+
+        tasks: list[TaskInfo] = []
+
+        if len(status.additional) > 0:
+            remove_task = progress.add_task('[red]Removing additional packages', total=1)
+            tasks.append(
+                TaskInfo(remove_task, lambda: self._pacman.remove_packages(status.additional)))
+
+        if len(status.missing_arch) > 0:
+            arch_task = progress.add_task('[yellow]Installing packages', total=1)
+            tasks.append(
+                TaskInfo(arch_task, lambda: self._pacman.install_packages(status.missing_arch)))
+
+        if len(status.missing_aur) > 0:
+            self._console.print("TODO: AUR packages")
+
+        total = sum(task.total for task in progress.tasks)
+        total_progress = Progress()
+        total_task = total_progress.add_task("Sync", total=int(total))
+
+        progress_table = Table.grid()
+        progress_table.add_row(
+            Panel.fit(total_progress, title='Total progress', border_style='green', padding=(2, 2)),
+            Panel.fit(progress, title='[b]Tasks', border_style='red', padding=(1, 2))
+        )
+
+        with Live(progress_table, refresh_per_second=10):
+            for task in tasks:
+                task.command()
+                progress.advance(task.task)
+
+                completed = sum(task.completed for task in progress.tasks)
+                total_progress.update(total_task, completed=completed)

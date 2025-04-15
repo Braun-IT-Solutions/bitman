@@ -25,4 +25,4 @@ class Bitman:
             self._console.print(*['[bold]·[/bold] ' + line +
                                 ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
         else:
-            print('Not implemented')
+            self._sync.run()
