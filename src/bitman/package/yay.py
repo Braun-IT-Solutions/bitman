@@ -13,7 +13,7 @@ class Yay(PackageManager):
             self._console.print(
                 '[red]Package manager [bold]yay[/bold] is currently not installed[/red]')
             # TODO: install yay via git clone & makepkg
-            return
+            raise 'yay not installed'
 
         result = subprocess.run(
             ['yay', '-S', '--noconfirm', *packages],
