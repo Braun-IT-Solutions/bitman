@@ -16,6 +16,11 @@ class Bitman:
         """Processes bitman sync command"""
         if args.status:
             status = self._sync.status()
+
+            if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
+                self._console.print('All packages are in sync', style='green')
+                return
+
             self._console.print('Additional', style='bold yellow')
             if len(status.additional) > 0:
                 self._console.print(
