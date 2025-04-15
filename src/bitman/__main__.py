@@ -1,6 +1,8 @@
 import argparse
 import bitman
 
+app = bitman.Bitman()
+
 parser = argparse.ArgumentParser(
     prog='bitman',
     description='A declarative package manager for Arch Linux'
@@ -18,7 +20,9 @@ user_install_parser.add_argument('--aur', help='Install packages from the AUR', 
 user_install_parser.add_argument('packages', nargs='+', help='The packages you want to install')
 
 sync_parser = subparsers.add_parser('sync', help='Sync Commands')
+sync_parser.add_argument('--status', action='store_true',
+                         help='List which packages are missing and which are additionally installed compared to bitman configuration')
+sync_parser.set_defaults(func=app.sync)
 
-print(parser.parse_args())
-
-app = bitman.Bitman()
+args = parser.parse_args()
+args.func(args)
