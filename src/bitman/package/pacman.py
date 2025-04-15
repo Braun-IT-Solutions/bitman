@@ -1,10 +1,11 @@
 import subprocess
 from typing import Generator
 
+from bitman.package.package_manager import PackageManager
 
-class Pacman:
-    def install_packages(self, packages: list[str]) -> None:
-        """Installs the given packages"""
+
+class Pacman(PackageManager):
+    def install_packages(self, packages):
         result = subprocess.run(
             ['pacman', '-S', '--noconfirm', *packages],
             stdout=subprocess.PIPE,
@@ -14,8 +15,7 @@ class Pacman:
         )
         result.check_returncode()
 
-    def remove_packages(self, packages: list[str]) -> None:
-        """Removes the given packages"""
+    def remove_packages(self, packages):
         result = subprocess.run(
             ['pacman', '-R', '--noconfirm', *packages],
             stdout=subprocess.PIPE,

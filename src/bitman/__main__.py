@@ -18,6 +18,7 @@ user_setup_parser = user_subparsers.add_parser('setup', help='Setup bitman for t
 user_install_parser = user_subparsers.add_parser('install', help='Install packages for user branch')
 user_install_parser.add_argument('--aur', help='Install packages from the AUR', action='store_true')
 user_install_parser.add_argument('packages', nargs='+', help='The packages you want to install')
+user_install_parser.set_defaults(func=app.install, scope='user')
 
 sync_parser = subparsers.add_parser('sync', help='Sync Commands')
 sync_parser.add_argument('--status', action='store_true',

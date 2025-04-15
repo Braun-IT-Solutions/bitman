@@ -2,12 +2,13 @@ import time
 from typing import Callable, NamedTuple
 from rich.prompt import Prompt
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TaskID
+from rich.progress import Progress, SpinnerColumn, TaskID
 from rich.panel import Panel
 from rich.table import Table
 from rich.live import Live
 from bitman.config.system_config import SystemConfig
-from bitman.pacman import Pacman
+from bitman.package.pacman import Pacman
+from bitman.package.yay import Yay
 
 
 class SyncStatus(NamedTuple):
@@ -22,9 +23,10 @@ class TaskInfo(NamedTuple):
 
 
 class Sync:
-    def __init__(self, system_config: SystemConfig, pacman: Pacman):
+    def __init__(self, system_config: SystemConfig, pacman: Pacman, yay: Yay):
         self._system_config = system_config
         self._pacman = pacman
+        self._yay = yay
         self._console = Console()
 
     def status(self) -> SyncStatus:
@@ -54,10 +56,14 @@ class Sync:
 
         if len(status.missing_arch) > 0 or len(status.missing_aur) > 0:
             self._console.print('The following packages will be installed:', style='yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
-            self._console.print(*['[bold]·[/bold] ' + line +
-                                  ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
+
+            if len(status.missing_arch) > 0:
+                self._console.print(
+                    *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
+
+            if len(status.missing_aur) > 0:
+                self._console.print(*['[bold]·[/bold] ' + line +
+                                    ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
             self._console.line()
 
         if len(status.additional) > 0:
@@ -89,7 +95,8 @@ class Sync:
                 TaskInfo(arch_task, lambda: self._pacman.install_packages(status.missing_arch)))
 
         if len(status.missing_aur) > 0:
-            self._console.print("TODO: AUR packages")
+            aur_task = progress.add_task('[yellow]Installing packages (AUR)', total=1)
+            tasks.append(TaskInfo(aur_task, lambda: self._yay.install_packages(status.missing_aur)))
 
         progress_table = Table.grid()
         progress_table.add_row(

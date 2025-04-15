@@ -1,7 +1,8 @@
 from argparse import Namespace
 from rich.console import Console
 from bitman.config.system_config import SystemConfig
-from bitman.pacman import Pacman
+from bitman.package.pacman import Pacman
+from bitman.package.yay import Yay
 from bitman.sync import Sync
 
 
@@ -9,10 +10,11 @@ class Bitman:
     def __init__(self):
         self._system_config = SystemConfig()
         self._pacman = Pacman()
-        self._sync = Sync(self._system_config, self._pacman)
+        self._yay = Yay()
+        self._sync = Sync(self._system_config, self._pacman, self._yay)
         self._console = Console()
 
-    def sync(self, args: Namespace):
+    def sync(self, args: Namespace) -> None:
         """Processes bitman sync command"""
         if args.status:
             status = self._sync.status()
@@ -35,3 +37,7 @@ class Bitman:
                                       ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
         else:
             self._sync.run()
+
+    def install(self, args: Namespace) -> None:
+        """Processes bitman user install command"""
+        print("Not implemented", args)
