@@ -17,13 +17,16 @@ class Bitman:
         if args.status:
             status = self._sync.status()
             self._console.print('Additional', style='bold yellow')
-            self._console.print(*['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
+            if len(status.additional) > 0:
+                self._console.print(
+                    *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
 
             self._console.print('\nMissing', style='bold red')
             if len(status.missing_arch) > 0:
                 self._console.print(
                     *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
-            self._console.print(*['[bold]·[/bold] ' + line +
-                                ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
+            if len(status.missing_aur) > 0:
+                self._console.print(*['[bold]·[/bold] ' + line +
+                                      ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
         else:
             self._sync.run()
