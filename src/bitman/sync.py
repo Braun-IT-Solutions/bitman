@@ -73,9 +73,7 @@ class Sync:
 
         progress = Progress(
             "{task.description}",
-            SpinnerColumn(),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%")
+            SpinnerColumn()
         )
 
         tasks: list[TaskInfo] = []
@@ -93,13 +91,8 @@ class Sync:
         if len(status.missing_aur) > 0:
             self._console.print("TODO: AUR packages")
 
-        total = sum(task.total for task in progress.tasks)
-        total_progress = Progress()
-        total_task = total_progress.add_task("Sync", total=int(total))
-
         progress_table = Table.grid()
         progress_table.add_row(
-            Panel.fit(total_progress, title='Total progress', border_style='green', padding=(2, 2)),
             Panel.fit(progress, title='[b]Tasks', border_style='red', padding=(1, 2))
         )
 
@@ -108,6 +101,3 @@ class Sync:
                 task.command()
                 progress.advance(task.task)
                 time.sleep(5)
-
-                completed = sum(task.completed for task in progress.tasks)
-                total_progress.update(total_task, completed=completed)
