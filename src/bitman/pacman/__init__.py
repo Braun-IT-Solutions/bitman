@@ -23,7 +23,8 @@ class Pacman:
             encoding='utf-8',
             check=False
         )
-        result.check_returncode()
+        if result.returncode != 0 and result.stderr:
+            result.check_returncode()
         for line in result.stdout.splitlines():
             yield line.split(' ', 1)[0]
 
@@ -36,6 +37,7 @@ class Pacman:
             encoding='utf-8',
             check=False
         )
-        result.check_returncode()
+        if result.returncode != 0 and result.stderr:
+            result.check_returncode()
         for line in result.stdout.splitlines():
             yield line.split(' ', 1)[0]
