@@ -9,9 +9,11 @@ class SystemConfig:
         self._aur_packages_path = join(self._config_directory, 'aur.packages')
 
     def arch_packages(self) -> Generator[str]:
+        """Yields all Arch packages defined in the bitman config"""
         yield from self._packages(self._arch_packages_path)
 
     def aur_packages(self) -> Generator[str]:
+        """Yields all AUR packages defined in the bitman config"""
         yield from self._packages(self._aur_packages_path)
 
     def _packages(self, file_path: str) -> Generator[str]:

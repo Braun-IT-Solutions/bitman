@@ -4,6 +4,7 @@ import subprocess
 
 class Pacman:
     def explicitly_installed_packages(self):
+        """Yields all explicitly installed packages (packages which weren't installed as a dependency)"""
         result = subprocess.run(
             ['pacman', '-Qe'],
             stdout=subprocess.PIPE,
