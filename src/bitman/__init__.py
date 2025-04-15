@@ -15,12 +15,12 @@ class Bitman:
         if args.status:
             status = self._sync.status()
             print('Additional:')
-            print(*status.additional, sep='\n\t')
+            print('\t', *status.additional, sep='\n\t')
 
             print('\nMissing from Arch Repository:')
-            print(*status.missing_arch, sep='\n\t')
+            print('\t', *status.missing_arch, sep='\n\t')
 
             print('\nMissing from AUR:')
-            print(*status.missing_aur, sep='\n\t')
+            print('\t', *status.missing_aur, sep='\n\t')
         else:
             print('Not implemented')
