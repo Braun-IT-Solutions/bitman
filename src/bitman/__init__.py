@@ -21,8 +21,8 @@ class Bitman:
 
             self._console.print('\nMissing', style='bold red')
             self._console.print(
-                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n')
+                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
             self._console.print(*['[bold]·[/bold] ' + line +
-                                '(AUR)' for line in status.missing_aur], sep='\n')
+                                ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
         else:
             print('Not implemented')
