@@ -52,16 +52,18 @@ class Sync:
             self._console.print('All packages are in sync, nothing to do', style='green')
 
         if len(status.missing_arch) > 0 or len(status.missing_aur) > 0:
-            self._console.print('The following packages will be installed:', style='bold')
+            self._console.print('The following packages will be installed:', style='yellow')
             self._console.print(
                 *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
             self._console.print(*['[bold]·[/bold] ' + line +
                                   ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
+            self._console.line()
 
         if len(status.additional) > 0:
             self._console.print('The following packages will be removed:', style='red')
             self._console.print(
                 *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
+            self._console.line()
 
         answer = Prompt.ask('Do you want to continue?', choices=[
                             'yes', 'no'], default='yes', case_sensitive=False)
