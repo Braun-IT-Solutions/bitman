@@ -1,5 +1,5 @@
-import bitman
 import argparse
+import bitman
 
 parser = argparse.ArgumentParser(
     prog='bitman',
@@ -22,4 +22,3 @@ sync_parser = subparsers.add_parser('sync', help='Sync Commands')
 print(parser.parse_args())
 
 app = bitman.Bitman()
-
