@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.live import Live
 from bitman.config.system_config import SystemConfig
 from bitman.package.pacman import Pacman
-from bitman.package.yay import Yay
+from bitman.package.yay import Yay, YayNotInstalledException
 
 
 class SyncStatus(NamedTuple):
@@ -103,8 +103,12 @@ class Sync:
             Panel.fit(progress, title='[b]Tasks', border_style='red', padding=(1, 2))
         )
 
-        with Live(progress_table, refresh_per_second=10):
-            for task in tasks:
-                task.command()
-                time.sleep(5)
-                progress.advance(task.task)
+        try:
+            with Live(progress_table, refresh_per_second=10):
+                for task in tasks:
+                    task.command()
+                    time.sleep(5)
+                    progress.advance(task.task)
+        except YayNotInstalledException:
+            self._console.print(
+                "Could not install AUR packages, [bold]yay[/bold] is not installed", style='red')
