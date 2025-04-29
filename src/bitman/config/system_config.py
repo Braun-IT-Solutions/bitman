@@ -11,6 +11,7 @@ class SystemConfig:
         self._arch_packages_path = join(self._config_directory, 'arch.packages')
         self._aur_packages_path = join(self._config_directory, 'aur.packages')
         self._services_path = join(self._config_directory, 'services.conf')
+        self._symlinks_file_path = join(self._config_directory, 'user', 'symlinks')
 
     @property
     def user_config_directory(self) -> str:
@@ -29,6 +30,16 @@ class SystemConfig:
 
     def user_services(self) -> Generator[ServiceConfig, None, None]:
         yield from self._parsed_services('user')
+
+    def symlinks(self) -> Generator[str, None, None]:
+        try:
+            with open(self._symlinks_file_path, 'rt', encoding='utf-8') as config_file:
+                for line in config_file:
+                    line = line.strip()
+                    if not line.startswith('#') and len(line) > 0:
+                        yield line
+        except IOError:
+            yield from []
 
     def _parsed_services(self, category: str) -> Generator[ServiceConfig, None, None]:
         try:
