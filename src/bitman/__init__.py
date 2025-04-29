@@ -4,6 +4,7 @@ from bitman.config.system_config import SystemConfig
 from bitman.package.pacman import Pacman
 from bitman.package.yay import Yay
 from bitman.service import Systemd
+from bitman.setup import Setup
 from bitman.sync import Sync, SyncScope, PackageSyncStatus
 
 
@@ -71,3 +72,8 @@ class Bitman:
     def install(self, args: Namespace) -> None:
         """Processes bitman user install command"""
         print("Not implemented", args)
+
+    def setup(self, args: Namespace) -> None:
+        """Setup user files"""
+        setup = Setup(self._system_config, self._systemd)
+        setup.run()

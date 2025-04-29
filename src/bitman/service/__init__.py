@@ -50,3 +50,14 @@ class Systemd:
             check=False
         )
         result.check_returncode()
+
+    def reload_daemon(self, user: bool = False) -> None:
+        result = subprocess.run(
+            filter(None, ['sudo' if not user else '', 'systemctl', '--user' if user else '',
+                   'daemon-reload']),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        result.check_returncode()

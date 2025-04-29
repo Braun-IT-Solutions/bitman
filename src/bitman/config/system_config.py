@@ -12,6 +12,10 @@ class SystemConfig:
         self._aur_packages_path = join(self._config_directory, 'aur.packages')
         self._services_path = join(self._config_directory, 'services.conf')
 
+    @property
+    def user_config_directory(self) -> str:
+        return join(self._config_directory, 'user')
+
     def arch_packages(self) -> Generator[str, None, None]:
         """Yields all Arch packages defined in the bitman config"""
         yield from self._packages(self._arch_packages_path)

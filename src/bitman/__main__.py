@@ -14,6 +14,7 @@ user_parser = subparsers.add_parser('user', help='User Commands')
 user_subparsers = user_parser.add_subparsers()
 
 user_setup_parser = user_subparsers.add_parser('setup', help='Setup bitman for this user')
+user_setup_parser.set_defaults(func=app.setup)
 
 user_install_parser = user_subparsers.add_parser('install', help='Install packages for user branch')
 user_install_parser.add_argument('--aur', help='Install packages from the AUR', action='store_true')
