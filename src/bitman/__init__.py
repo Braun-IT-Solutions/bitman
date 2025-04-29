@@ -4,7 +4,7 @@ from bitman.config.system_config import SystemConfig
 from bitman.package.pacman import Pacman
 from bitman.package.yay import Yay
 from bitman.service import Systemd
-from bitman.sync import Sync, SyncStatus
+from bitman.sync import Sync, SyncScope, PackageSyncStatus
 
 
 class Bitman:
@@ -12,21 +12,26 @@ class Bitman:
         self._system_config = SystemConfig()
         self._pacman = Pacman()
         self._yay = Yay()
-        self._sync = Sync(self._system_config, self._pacman, self._yay)
-        self._console = Console()
         self._systemd = Systemd()
+        self._sync = Sync(self._system_config, self._pacman, self._yay, self._systemd)
+        self._console = Console()
 
     def sync(self, args: Namespace) -> None:
         """Processes bitman sync command"""
+
+        scope = SyncScope(args)
         if args.status:
-            status = self._sync.status()
+            status = self._sync.package_status()
 
-            self._print_package_status(status)
-            self._print_service_status()
+            if scope.packages:
+                self._print_package_status(status)
+
+            if scope.services:
+                self._print_service_status()
         else:
-            self._sync.run()
+            self._sync.run(scope)
 
-    def _print_package_status(self, status: SyncStatus) -> None:
+    def _print_package_status(self, status: PackageSyncStatus) -> None:
         if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
             self._console.print('All packages are in sync', style='green')
             return

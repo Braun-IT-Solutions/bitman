@@ -23,3 +23,28 @@ class Systemd:
             check=False
         )
         return result.returncode == 0
+
+    def enable_service(self, service: str, now: bool = False) -> None:
+        result = subprocess.run(
+            filter(None, ['sudo', 'systemctl', 'enable', '--now' if now else '', service]),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        try:
+            result.check_returncode()
+        except Exception as e:
+            print('Error')
+            print(e)
+            print(result.stderr)
+
+    def disable_service(self, service: str, now: bool = False) -> None:
+        result = subprocess.run(
+            filter(None, ['sudo', 'systemctl', 'disable', '--now' if now else '', service]),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        result.check_returncode()
