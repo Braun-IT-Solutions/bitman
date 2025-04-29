@@ -1,5 +1,7 @@
 from os.path import join
 from typing import Generator
+
+from bitman.config.service_config import ServiceConfig
 from . import SYSTEM_CONFIG_PATH
 
 
@@ -8,6 +10,7 @@ class SystemConfig:
         self._config_directory = SYSTEM_CONFIG_PATH
         self._arch_packages_path = join(self._config_directory, 'arch.packages')
         self._aur_packages_path = join(self._config_directory, 'aur.packages')
+        self._services_path = join(self._config_directory, 'services.conf')
 
     def arch_packages(self) -> Generator[str, None, None]:
         """Yields all Arch packages defined in the bitman config"""
@@ -16,6 +19,30 @@ class SystemConfig:
     def aur_packages(self) -> Generator[str, None, None]:
         """Yields all AUR packages defined in the bitman config"""
         yield from self._packages(self._aur_packages_path)
+
+    def system_services(self) -> Generator[ServiceConfig, None, None]:
+        try:
+            with open(self._services_path, 'rt', encoding='utf-8') as config_file:
+                found_services_start = False
+                for line in config_file:
+                    line = line.strip()
+                    if line.startswith('#'):
+                        continue
+                    if not found_services_start and '[system]' in line.lower():
+                        found_services_start = True
+                        continue
+                    if found_services_start and line.startswith('['):
+                        break
+                    if found_services_start and len(line) > 0:
+                        yield self._parsed_service_config(line)
+        except IOError:
+            yield from []
+
+    def _parsed_service_config(self, line: str) -> ServiceConfig:
+        state, name = line.split(' ', 2)
+        if state != 'enable' and state != 'disable':
+            raise ServiceConfigParseException
+        return ServiceConfig(name, state)
 
     def _packages(self, file_path: str) -> Generator[str, None, None]:
         try:
@@ -26,3 +53,7 @@ class SystemConfig:
                         yield line
         except IOError:
             yield from []
+
+
+class ServiceConfigParseException(BaseException):
+    pass
