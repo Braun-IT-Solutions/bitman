@@ -21,6 +21,12 @@ class SystemConfig:
         yield from self._packages(self._aur_packages_path)
 
     def system_services(self) -> Generator[ServiceConfig, None, None]:
+        yield from self._parsed_services('system')
+
+    def user_services(self) -> Generator[ServiceConfig, None, None]:
+        yield from self._parsed_services('user')
+
+    def _parsed_services(self, category: str) -> Generator[ServiceConfig, None, None]:
         try:
             with open(self._services_path, 'rt', encoding='utf-8') as config_file:
                 found_services_start = False
@@ -28,7 +34,7 @@ class SystemConfig:
                     line = line.strip()
                     if line.startswith('#'):
                         continue
-                    if not found_services_start and '[system]' in line.lower():
+                    if not found_services_start and f'[{category}]' in line.lower():
                         found_services_start = True
                         continue
                     if found_services_start and line.startswith('['):

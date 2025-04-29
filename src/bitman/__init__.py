@@ -51,11 +51,19 @@ class Bitman:
 
     def _print_service_status(self) -> None:
         services = self._system_config.system_services()
-
-        self._console.print('\nServices:', style='bold white')
+        self._console.print('\nSystem Services:', style='bold white')
         for service in services:
             service_enabled = self._systemd.service_enabled(service.service)
             running = self._systemd.service_running(service.service)
+            should_be_enabled = service.desired_state == 'enable'
+            self._console.print(
+                f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')
+
+        user_services = self._system_config.user_services()
+        self._console.print('\nUser Services:', style='bold white')
+        for service in user_services:
+            service_enabled = self._systemd.service_enabled(service.service, user=True)
+            running = self._systemd.service_running(service.service, user=True)
             should_be_enabled = service.desired_state == 'enable'
             self._console.print(
                 f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')

@@ -2,9 +2,9 @@ import subprocess
 
 
 class Systemd:
-    def service_enabled(self, service: str) -> bool:
+    def service_enabled(self, service: str, user: bool = False) -> bool:
         result = subprocess.run(
-            ['systemctl', 'is-enabled', service],
+            filter(None, ['systemctl', '--user' if user else '', 'is-enabled', service]),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -14,9 +14,9 @@ class Systemd:
             result.check_returncode()
         return result.stdout.startswith('enabled')
 
-    def service_running(self, service: str) -> bool:
+    def service_running(self, service: str, user: bool = False) -> bool:
         result = subprocess.run(
-            ['systemctl', 'is-active', '--quiet', service],
+            filter(None, ['systemctl', '--user' if user else '', 'is-active', '--quiet', service]),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -24,9 +24,10 @@ class Systemd:
         )
         return result.returncode == 0
 
-    def enable_service(self, service: str, now: bool = False) -> None:
+    def enable_service(self, service: str, now: bool = False, user: bool = False) -> None:
         result = subprocess.run(
-            filter(None, ['sudo', 'systemctl', 'enable', '--now' if now else '', service]),
+            filter(None, ['sudo' if not user else '', 'systemctl', '--user' if user else '',
+                   'enable', '--now' if now else '', service]),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -39,9 +40,10 @@ class Systemd:
             print(e)
             print(result.stderr)
 
-    def disable_service(self, service: str, now: bool = False) -> None:
+    def disable_service(self, service: str, now: bool = False, user: bool = False) -> None:
         result = subprocess.run(
-            filter(None, ['sudo', 'systemctl', 'disable', '--now' if now else '', service]),
+            filter(None, ['sudo' if not user else '', 'systemctl', '--user' if user else '',
+                   'disable', '--now' if now else '', service]),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',

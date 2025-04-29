@@ -7,7 +7,7 @@ from bitman.package.package_manager import PackageManager
 class Pacman(PackageManager):
     def install_packages(self, packages):
         result = subprocess.run(
-            ['sudo', 'pacman', '-S', '--noconfirm', *packages],
+            ['sudo', 'pacman', '-S', '--asexplicit', '--needed', '--noconfirm', *packages],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',

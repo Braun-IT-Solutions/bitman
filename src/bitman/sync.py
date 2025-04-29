@@ -77,7 +77,6 @@ class Sync:
         Returns which services are enabled, but shouldn't be and vice-versa
         """
         wanted_services = list(self._system_config.system_services())
-
         wanted_enabled_system_services = [
             config.service for config in wanted_services if config.desired_state == 'enable']
         wanted_disabled_system_services = [
@@ -88,7 +87,18 @@ class Sync:
         system_services_to_disable = [
             service for service in wanted_disabled_system_services if self._systemd.service_enabled(service)]
 
-        return ServiceSyncStatus(system_services_to_disable, system_services_to_enable, [], [])
+        wanted_user_services = list(self._system_config.user_services())
+        wanted_enabled_user_services = [
+            config.service for config in wanted_user_services if config.desired_state == 'enable']
+        wanted_disabled_user_services = [
+            config.service for config in wanted_user_services if config.desired_state == 'disable']
+
+        user_services_to_enable = [
+            service for service in wanted_enabled_user_services if not self._systemd.service_enabled(service, user=True)]
+        user_services_to_disable = [
+            service for service in wanted_disabled_user_services if self._systemd.service_enabled(service, user=True)]
+
+        return ServiceSyncStatus(system_services_to_disable, system_services_to_enable, user_services_to_disable, user_services_to_enable)
 
     def run(self, scope: SyncScope) -> None:
         """Runs a sync which will remove additional and install missing packages"""
@@ -207,7 +217,17 @@ class Sync:
             self._systemd.enable_service(service)
             self._console.print(' Done!')
 
+        for service in status.user_to_enable:
+            self._console.print(f'Enabling {service}...', end='')
+            self._systemd.enable_service(service, user=True)
+            self._console.print(' Done!')
+
         for service in status.system_to_disable:
             self._console.print(f'Disbling {service}...', end='')
             self._systemd.disable_service(service)
+            self._console.print(' Done!')
+
+        for service in status.user_to_disable:
+            self._console.print(f'Disbling {service}...', end='')
+            self._systemd.disable_service(service, user=True)
             self._console.print(' Done!')

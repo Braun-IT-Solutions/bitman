@@ -16,7 +16,16 @@ class Yay(PackageManager):
             raise YayNotInstalledException()
 
         result = subprocess.run(
-            ['yay', '-S', '--noconfirm', *packages],
+            ['yay', '-S', '--noconfirm', '--needed', *packages],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        result.check_returncode()
+
+        result = subprocess.run(
+            ['pacman', '-D', '--asexplicit', *packages],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
