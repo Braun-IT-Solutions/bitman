@@ -24,6 +24,7 @@ user_install_parser.set_defaults(func=app.install, scope='user')
 sync_parser = subparsers.add_parser('sync', help='Sync Commands')
 sync_parser.add_argument('--packages', action='store_true', help='Only sync packages')
 sync_parser.add_argument('--services', action='store_true', help='Only sync services')
+sync_parser.add_argument('--ufw', action='store_true', help='Only sync ufw rules')
 sync_parser.add_argument('--status', action='store_true',
                          help='List which packages are missing and which are additionally installed compared to bitman configuration')
 sync_parser.set_defaults(func=app.sync)

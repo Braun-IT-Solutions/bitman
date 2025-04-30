@@ -33,9 +33,12 @@ class TaskInfo(NamedTuple):
 
 class SyncScope():
     def __init__(self, args: Namespace):
-        all_enabled = not args.packages and not args.services
+        all_enabled = not args.packages \
+            and not args.services\
+            and not args.ufw
         self._packages = args.packages or all_enabled
         self._services = args.services or all_enabled
+        self._ufw = args.ufw or all_enabled
 
     @property
     def packages(self) -> bool:
@@ -44,6 +47,10 @@ class SyncScope():
     @property
     def services(self) -> bool:
         return self._services
+
+    @property
+    def ufw(self) -> bool:
+        return self._ufw
 
 
 class Sync:
