@@ -1,12 +1,13 @@
 import subprocess
-from config.ufw_rule import UfwRule, DefaultUfwRule
 from typing import Generator, Tuple
+
+from bitman.config.ufw_rule import UfwRule, DefaultUfwRule
 
 
 class Ufw:
     def __init__(self):
-        self._rules = None
-        self._default_rules = None
+        self._rules: list[UfwRule] | None = None
+        self._default_rules: tuple[DefaultUfwRule, DefaultUfwRule] | None = None
         self._current_verbose = self._verbose_status()
         self._current_numbered_status = self._numbered_status()
 
@@ -21,7 +22,7 @@ class Ufw:
         self._rules = None
         self._default_rules = None
         result = subprocess.run(
-            ['ufw', 'reload'],
+            ['sudo', 'ufw', 'reload'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -31,7 +32,7 @@ class Ufw:
 
     def enable(self) -> None:
         result = subprocess.run(
-            ['ufw', 'enable'],
+            ['sudo', 'ufw', 'enable'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -41,7 +42,7 @@ class Ufw:
 
     def disable(self) -> None:
         result = subprocess.run(
-            ['ufw', 'disable'],
+            ['sudo', 'ufw', 'disable'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -51,7 +52,7 @@ class Ufw:
 
     def reset(self) -> None:
         result = subprocess.run(
-            ['ufw', 'reset'],
+            ['sudo', 'ufw', 'reset'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -60,35 +61,35 @@ class Ufw:
         result.check_returncode()
 
     def rules(self) -> Generator[UfwRule, None, None]:
-        if self._rules != None:
+        if self._rules is not None:
             yield from self._rules
             return
         rules = []
-        for line in self._current_numbered_status:
+        for line in self._current_numbered_status.splitlines():
             line = line.strip()
             if line.startswith('['):
                 rule = UfwRule.fromUfwStatus(line)
                 rules.append(rule)
                 yield rule
-        self._rules = rule
+        self._rules = rules
 
     def default_rules(self) -> Tuple[DefaultUfwRule, DefaultUfwRule]:
-        if self._default_rules != None:
+        if self._default_rules is not None:
             return self._default_rules
-        for line in self._current_verbose:
+        for line in self._current_verbose.splitlines():
             line = line.strip()
             if line.startswith('Default: '):
                 self._default_rules = DefaultUfwRule.fromUfwStatus(line)
                 return self._default_rules
-        raise UfwStatusParseException(f"Where default ufw status?")
+        raise UfwStatusParseException("Where default ufw status?")
 
     def delete_rules(self, rules: list[UfwRule]) -> None:
-        rules = rules.sort(key=lambda rule: rule.index, reverse=True)
+        rules.sort(key=lambda rule: rule.index, reverse=True)
         for rule in rules:
-            if rule == None:
-                raise UfwDeleteRuleException(f"Invalid rule index")
+            if rule is None:
+                raise UfwDeleteRuleException("Invalid rule index")
             result = subprocess.run(
-                ['ufw', 'delete', rule.index],
+                ['sudo', 'ufw', '--force', 'delete', str(rule.index)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 encoding='utf-8',
@@ -117,7 +118,8 @@ class Ufw:
 
     def add_rule(self, rule: UfwRule) -> None:
         result = subprocess.run(
-            ['ufw', rule.rule, rule.type, 'on', rule.from_ip, 'to', rule.proto, rule.port],
+            ['sudo', 'ufw', rule.rule, rule.type, 'from', rule.from_ip,
+                'proto', rule.proto, 'to', 'any', 'port', rule.port],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -127,7 +129,7 @@ class Ufw:
 
     def set_default_rule(self, rule: DefaultUfwRule) -> None:
         result = subprocess.run(
-            ['ufw', 'default', rule.rule, 'incoming' if rule.type == 'in' else 'outgoing'],
+            ['sudo', 'ufw', 'default', rule.rule, 'incoming' if rule.type == 'in' else 'outgoing'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -137,7 +139,7 @@ class Ufw:
 
     def _verbose_status(self) -> str:
         result = subprocess.run(
-            ['ufw', 'status', 'verbose'],
+            ['sudo', 'ufw', 'status', 'verbose'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',
@@ -148,7 +150,7 @@ class Ufw:
 
     def _numbered_status(self) -> str:
         result = subprocess.run(
-            ['ufw', 'status', 'numbered'],
+            ['sudo', 'ufw', 'status', 'numbered'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding='utf-8',

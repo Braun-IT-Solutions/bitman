@@ -1,7 +1,6 @@
-
+from __future__ import annotations
 from typing import Literal
 import re
-from __future__ import annotations
 
 
 class DefaultUfwRule:
@@ -14,8 +13,8 @@ class DefaultUfwRule:
         self.type = type
         self.rule = rule
 
-    def __eq__(self, rule: UfwRule) -> bool:
-        return self.rule == rule.rule and self.type == rule.type
+    def __eq__(self, rule: any) -> bool:
+        return rule is not None and rule is DefaultUfwRule and self.rule == rule.rule and self.type == rule.type
 
     def __hash__(self):
         return hash((self.rule, self.type))
@@ -63,8 +62,10 @@ class UfwRule:
         self.from_ip = from_ip
         self.port = port
 
-    def __eq__(self, rule: UfwRule) -> bool:
-        return self.rule == rule.rule \
+    def __eq__(self, rule: any) -> bool:
+        return rule is not None \
+            and rule is UfwRule \
+            and self.rule == rule.rule \
             and self.type == rule.type \
             and self.proto == rule.proto \
             and self.port == rule.port \
@@ -78,9 +79,9 @@ class UfwRule:
         type, rule, port, proto, from_ip = line.split('\t', 5)
         if type != 'in':
             raise UfwConfigParseException(f"Invalid UFW Config type: {type}")
-        if rule != 'allow' or rule != 'deny':
+        if rule != 'allow' and rule != 'deny':
             raise UfwConfigParseException(f"Invalid UFW Config rule: {rule}")
-        if proto != 'any' or proto != 'tcp' or proto != 'udp':
+        if proto != 'any' and proto != 'tcp' and proto != 'udp':
             raise UfwConfigParseException(f"Invalid UFW Config proto: {proto}")
         if port == '':
             raise UfwConfigParseException(f"Invalid UFW Config port: {port}")
@@ -110,8 +111,8 @@ class UfwRule:
         if 'Anywhere' in from_ip:
             from_ip = 'any'
 
-        if proto != 'any' or proto != 'tpc' or proto != 'udp':
-            raise UfwStatusParseException(f"Invalid UFW status proto: {proto}")
+        if proto != 'any' and proto != 'tpc' and proto != 'udp':
+            raise UfwStatusParseException(f"Invalid UFW status proto: '{proto}'")
         if from_ip == '':
             raise UfwStatusParseException(f"Invalid UFW status from_ip: {from_ip}")
         return UfwRule(int(index), type, rule, proto, port, from_ip)

@@ -3,9 +3,9 @@ import getpass
 import os
 from pathlib import Path
 import subprocess
-from bitman.config.system_config import SystemConfig
 from os.path import join
 
+from bitman.config.system_config import SystemConfig
 from bitman.service import Systemd
 
 
