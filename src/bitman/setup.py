@@ -15,6 +15,10 @@ class Setup:
         self._systemd = systemd
 
     def run(self) -> None:
+        """
+        Creates symlinks and bindfs for the current user to use bitman
+        """
+
         bitman_user_directory = self._system_config.user_config_directory
         user_home = Path.home()
         user_local_bitman_directory = join(user_home, '.bitman')

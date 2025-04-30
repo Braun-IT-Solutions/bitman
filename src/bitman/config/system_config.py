@@ -3,7 +3,7 @@ from typing import Generator
 
 from bitman.config.service_config import ServiceConfig
 from . import SYSTEM_CONFIG_PATH
-from ufw_rule import UfwRule, DefaultUfwRule
+from .ufw_rule import UfwRule, DefaultUfwRule
 
 
 class SystemConfig:
@@ -14,9 +14,11 @@ class SystemConfig:
         self._services_path = join(self._config_directory, 'services.conf')
         self._symlinks_file_path = join(self._config_directory, 'user', 'symlinks')
         self._ufw_rules_path = join(self._config_directory, 'ufw.conf')
+        self._hooks_directory = join(self._config_directory, 'hooks')
 
     @property
     def user_config_directory(self) -> str:
+        """Returns path to bitman user files directory"""
         return join(self._config_directory, 'user')
 
     def arch_packages(self) -> Generator[str, None, None]:
@@ -28,12 +30,15 @@ class SystemConfig:
         yield from self._packages(self._aur_packages_path)
 
     def system_services(self) -> Generator[ServiceConfig, None, None]:
+        """Returns list of configured system services"""
         yield from self._parsed_services('system')
 
     def user_services(self) -> Generator[ServiceConfig, None, None]:
+        """Returns list of configured user services"""
         yield from self._parsed_services('user')
 
     def symlinks(self) -> Generator[str, None, None]:
+        """Returns list of configured symlinks for user files"""
         try:
             with open(self._symlinks_file_path, 'rt', encoding='utf-8') as config_file:
                 for line in config_file:
@@ -44,10 +49,16 @@ class SystemConfig:
             yield from []
 
     def ufw_rules(self) -> Generator[UfwRule, None, None]:
+        """Returns list of configured UFW rules"""
         yield from self._parsed_ufw_rules()
 
     def default_ufw_rules(self) -> Generator[UfwRule, None, None]:
+        """Returns list of configured default UFW rules"""
         yield from self._parsed_default_ufw_rules()
+
+    def hooks_directory(self) -> str:
+        """Returns path to hooks directory"""
+        return self._hooks_directory
 
     def _parsed_ufw_rules(self):
         with open(self._ufw_rules_path, 'rt', encoding='utf-8') as config_file:
