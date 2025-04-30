@@ -8,6 +8,7 @@ from bitman.package.yay import Yay
 from bitman.package_sync import PackageSync, PackageSyncStatus
 from bitman.service import Systemd
 from bitman.ufw import Ufw
+from bitman.ufw_sync import UfwSync
 
 
 class ServiceSyncStatus(NamedTuple):
@@ -94,35 +95,6 @@ class Sync:
 
         return ServiceSyncStatus(system_services_to_disable, system_services_to_enable, user_services_to_disable, user_services_to_enable)
 
-    def print_ufw_status(self) -> bool:
-        if not self._ufw.is_enabled():
-            self._console.print("Ufw is disabled should be enabled")
-            return True
-
-        expected_default_rules = list(self._system_config.default_ufw_rules())
-        expected_rules = list(self._system_config.ufw_rules())
-
-        unsynced_default_rules = self._ufw.default_not_equal(expected_default_rules)
-        missing_rules = self._ufw.missing_rules(expected_rules)
-        rules_to_delete = self._ufw.rules_to_delete(expected_rules)
-
-        if len(unsynced_default_rules) == 0 and len(missing_rules) == 0 and len(rules_to_delete) == 0:
-            self._console.print('All ufw rules in sync', style='green')
-            return False
-        if len(unsynced_default_rules) != 0:
-            self._console.print('Unsynced default rules', style='bold yellow')
-            self._console.print(
-                *[f'[bold]·[/bold] {rule}' for rule in unsynced_default_rules], sep='\n')
-        if len(missing_rules) != 0:
-            self._console.print('Missing rules', style='bold yellow')
-            self._console.print(
-                *[f'[bold]·[/bold] {rule}' for rule in missing_rules], sep='\n')
-        if len(rules_to_delete) != 0:
-            self._console.print('Rules to delete', style='bold yellow')
-            self._console.print(
-                *[f'[bold]·[/bold] {rule}' for rule in rules_to_delete], sep='\n')
-        return True
-
     def run(self, scope: SyncScope) -> None:
         """Runs a sync which will remove additional and install missing packages"""
 
@@ -136,54 +108,8 @@ class Sync:
             self._run_ufw()
 
     def _run_ufw(self) -> None:
-        if not self._ufw.is_enabled():
-            answer = Prompt.ask('UFW needs to be enabled to start configuring, do you want to continue?', choices=[
-                'yes', 'no'], default='yes', case_sensitive=False)
-            if answer != 'yes':
-                return
-
-            self._console.print('Enable ufw', style='bold yellow')
-            self._ufw.enable()
-            self._ufw.update_status()
-
-        is_not_synced = self.print_ufw_status()
-
-        if not is_not_synced:
-            return
-
-        answer = Prompt.ask('Do you want to continue?', choices=[
-                            'yes', 'no'], default='yes', case_sensitive=False)
-        if answer != 'yes':
-            return
-
-        expected_default_rules = list(self._system_config.default_ufw_rules())
-        expected_rules = list(self._system_config.ufw_rules())
-
-        unsynced_default_rules = self._ufw.default_not_equal(expected_default_rules)
-        missing_rules = self._ufw.missing_rules(expected_rules)
-        rules_to_delete = self._ufw.rules_to_delete(expected_rules)
-
-        if len(unsynced_default_rules) == 0 and len(missing_rules) == 0 and len(rules_to_delete) == 0:
-            self._console.print('All ufw rules in sync', style='green')
-            return
-
-        if len(unsynced_default_rules) != 0:
-            self._console.print('Syncing default rules', style='bold yellow')
-            for rule in unsynced_default_rules:
-                self._console.print(f"Set default to: {rule}", style='yellow')
-                self._ufw.set_default_rule(rule)
-
-        if len(rules_to_delete) != 0:
-            self._console.print('Deleting rules', style='bold yellow')
-            self._ufw.delete_rules(list(rules_to_delete))
-        if len(missing_rules) != 0:
-            self._console.print('Add missing rules', style='bold yellow')
-            for rule in missing_rules:
-                self._console.print(f"Add rule: {rule}", style='yellow')
-                self._ufw.add_rule(rule)
-
-        self._console.print('Reload ufw', style='bold yellow')
-        self._ufw.reload()
+        sync = UfwSync(self._ufw, self._console, self._system_config)
+        sync.run()
 
     def _run_packages(self) -> None:
         status = self.package_status()
