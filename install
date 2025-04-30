@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+pacman --asexplicit -S python-markdown-it-py python-mdurl python-pygments python-rich python-typing_extensions
