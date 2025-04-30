@@ -38,25 +38,7 @@ class Bitman:
             self._sync.run(scope)
 
     def _print_ufw_status(self) -> None:
-        expected_default_rules = list(self._system_config.default_ufw_rules())
-        expected_rules = list(self._system_config.ufw_rules())
-
-        unsynced_default_rules = self._ufw.default_not_equal(expected_default_rules)
-        missing_rules = self._ufw.missing_rules(expected_rules)
-        rules_to_delete = self._ufw.rules_to_delete(expected_rules)
-
-        if len(unsynced_default_rules) == 0 and len(missing_rules) == 0 and len(rules_to_delete) == 0:
-            self._console.print('Unsynced default rules', style='bold yellow')
-            self._console.print('All ufw rules in sync', style='green')
-            return
-        if len(missing_rules) != 0:
-            self._console.print('Missing rules', style='bold yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + str(rule) for rule in missing_rules], sep='\n')
-        if len(rules_to_delete) != 0:
-            self._console.print('Rules to delete', style='bold yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + str(rule) for rule in rules_to_delete], sep='\n')
+        self._sync.print_ufw_status()
 
     def _print_package_status(self, status: PackageSyncStatus) -> None:
         if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
