@@ -1,6 +1,7 @@
 
 from typing import Literal
 import re
+from __future__ import annotations
 
 
 class DefaultUfwRule:
@@ -13,8 +14,14 @@ class DefaultUfwRule:
         self.type = type
         self.rule = rule
 
+    def __eq__(self, rule: UfwRule) -> bool:
+        return self.rule == rule.rule and self.type == rule.type
+
+    def __hash__(self):
+        return hash((self.rule, self.type))
+
     @staticmethod
-    def fromBitmanConfig(line: str):
+    def fromBitmanConfig(line: str) -> DefaultUfwRule:
         if ('in' in line):
             return DefaultUfwRule('in', 'deny' if 'deny' in line else 'allow')
         if ('out' in line):
@@ -22,22 +29,22 @@ class DefaultUfwRule:
         raise UfwConfigParseException(f"Invalid default ufw config: {line}")
 
     @staticmethod
-    def fromUfwStatus(line: str):
+    def fromUfwStatus(line: str) -> tuple[DefaultUfwRule, DefaultUfwRule]:
         is_deny_in = 'deny (incoming)' in line
         is_allow_out = 'allow (outgoing)' in line
-        return [
+        return (
             DefaultUfwRule('in', 'deny' if is_deny_in else 'allow'),
             DefaultUfwRule('out', 'allow' if is_allow_out else 'deny')
-        ]
+        )
 
 
 class UfwRule:
     index: int | None
-    type: Literal['in']
+    type: Literal['in', 'out']
     rule: Literal['allow', 'deny']
     proto: Literal['any', 'tcp', 'udp']
     port: int | str
-    fromIp: str
+    from_ip: str
 
     def __init__(self,
                  index: int | None,
@@ -45,17 +52,27 @@ class UfwRule:
                  rule: Literal['allow', 'deny'],
                  proto: Literal['any', 'tcp', 'udp'],
                  port: int | str,
-                 fromIp: str):
+                 from_ip: str):
         self.index = index
         self.type = type
         self.rule = rule
         self.proto = proto
-        self.fromIp = fromIp
+        self.from_ip = from_ip
         self.port = port
 
+    def __eq__(self, rule: UfwRule) -> bool:
+        return self.rule == rule.rule \
+            and self.type == rule.type \
+            and self.proto == rule.proto \
+            and self.port == rule.port \
+            and self.from_ip == rule.from_ip
+
+    def __hash__(self):
+        return hash((self.rule, self.type, self.proto, self.port, self.from_ip))
+
     @staticmethod
-    def fromBitmanConfig(line: str):
-        type, rule, port, proto, fromIp = line.split('\t', 5)
+    def fromBitmanConfig(line: str) -> UfwRule:
+        type, rule, port, proto, from_ip = line.split('\t', 5)
         if type != 'in':
             raise UfwConfigParseException(f"Invalid UFW Config type: {type}")
         if rule != 'allow' or rule != 'deny':
@@ -64,14 +81,14 @@ class UfwRule:
             raise UfwConfigParseException(f"Invalid UFW Config proto: {proto}")
         if port == '':
             raise UfwConfigParseException(f"Invalid UFW Config port: {port}")
-        if fromIp == '':
-            raise UfwConfigParseException(f"Invalid UFW Config fromIp: {fromIp}")
+        if from_ip == '':
+            raise UfwConfigParseException(f"Invalid UFW Config from_ip: {from_ip}")
 
-        return UfwRule(None, type, rule, proto, port, fromIp)
+        return UfwRule(None, type, rule, proto, port, from_ip)
 
     @staticmethod
-    def fromUfwStatus(line: str):
-        pattern = r"(\[\s*(?P<index>\d+)\])\s*(?P<port_proto>[\w\/]+)( \(v6\))?\s+(?P<rule>ALLOW|DENY) (?P<type>IN|OUT)\s+(?P<fromIp>.+)"
+    def fromUfwStatus(line: str) -> UfwRule:
+        pattern = r"(\[\s*(?P<index>\d+)\])\s*(?P<port_proto>[\w\/]+)( \(v6\))?\s+(?P<rule>ALLOW|DENY) (?P<type>IN|OUT)\s+(?P<from_ip>.+)"
         match = re.match(pattern, line.strip())
         if not match:
             raise UfwStatusParseException(f"Invalid UFW status line: {line}")
@@ -79,7 +96,7 @@ class UfwRule:
         port_proto = match.group("port_proto")
         rule = match.group("rule").lower()
         type = match.group("type").lower()
-        fromIp = match.group("fromIp").strip()
+        from_ip = match.group("from_ip").strip()
         index = match.group("index")
 
         if '/' in port_proto:
@@ -87,14 +104,14 @@ class UfwRule:
         else:
             port, proto = port_proto, 'any'
 
-        if 'Anywhere' in fromIp:
-            fromIp = 'any'
+        if 'Anywhere' in from_ip:
+            from_ip = 'any'
 
         if proto != 'any' or proto != 'tpc' or proto != 'udp':
             raise UfwStatusParseException(f"Invalid UFW status proto: {proto}")
-        if fromIp == '':
-            raise UfwStatusParseException(f"Invalid UFW status fromIp: {fromIp}")
-        return UfwRule(int(index), type, rule, proto, port, fromIp)
+        if from_ip == '':
+            raise UfwStatusParseException(f"Invalid UFW status from_ip: {from_ip}")
+        return UfwRule(int(index), type, rule, proto, port, from_ip)
 
 
 class UfwConfigParseException(BaseException):
