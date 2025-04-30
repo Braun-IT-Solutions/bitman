@@ -35,8 +35,7 @@ class Yay(PackageManager):
 
     def _is_installed(self) -> bool:
         pacman = Pacman()
-        installed_packages = pacman.foreign_installed_packages()
-        return 'yay' in installed_packages
+        return pacman.package_installed('yay')
 
 
 class YayNotInstalledException(BaseException):

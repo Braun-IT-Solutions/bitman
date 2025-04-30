@@ -9,6 +9,9 @@ parser = argparse.ArgumentParser(
 )
 subparsers = parser.add_subparsers()
 
+init_parser = subparsers.add_parser('init', help='Initializes the bitman config in /etc/bitman')
+init_parser.set_defaults(func=app.init)
+
 user_parser = subparsers.add_parser('user', help='User Commands')
 
 user_subparsers = user_parser.add_subparsers()

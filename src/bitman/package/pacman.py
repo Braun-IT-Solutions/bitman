@@ -52,3 +52,14 @@ class Pacman(PackageManager):
             result.check_returncode()
         for line in result.stdout.splitlines():
             yield line.split(' ', 1)[0]
+
+    def package_installed(self, package: str) -> bool:
+        """Returns whether or not a certain package is installed"""
+        result = subprocess.run(
+            ['pacman', '-Q', package],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding='utf-8',
+            check=False
+        )
+        return result.returncode == 0
