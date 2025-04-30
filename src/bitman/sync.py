@@ -1,5 +1,4 @@
 from argparse import Namespace
-from typing import NamedTuple
 from rich.prompt import Prompt
 from rich.console import Console
 from bitman.config.system_config import SystemConfig
@@ -7,15 +6,9 @@ from bitman.package.pacman import Pacman
 from bitman.package.yay import Yay
 from bitman.package_sync import PackageSync, PackageSyncStatus
 from bitman.service import Systemd
+from bitman.services_sync import ServiceSyncStatus, ServicesSync
 from bitman.ufw import Ufw
 from bitman.ufw_sync import UfwSync
-
-
-class ServiceSyncStatus(NamedTuple):
-    system_to_disable: list[str]
-    system_to_enable: list[str]
-    user_to_disable: list[str]
-    user_to_enable: list[str]
 
 
 class SyncScope():
@@ -95,6 +88,10 @@ class Sync:
 
         return ServiceSyncStatus(system_services_to_disable, system_services_to_enable, user_services_to_disable, user_services_to_enable)
 
+    def print_ufw_status(self) -> None:
+        sync = UfwSync(self._ufw, self._console, self._system_config)
+        sync.print_summary()
+
     def run(self, scope: SyncScope) -> None:
         """Runs a sync which will remove additional and install missing packages"""
 
@@ -126,59 +123,12 @@ class Sync:
 
     def _run_services(self) -> None:
         status = self.service_status()
-        if len(status.system_to_disable) == 0 and len(status.system_to_enable) == 0 and len(status.user_to_disable) == 0 and len(status.user_to_enable) == 0:
-            self._console.print('Everything in sync, nothing to do', style='bold green')
-            return
-
-        if len(status.system_to_enable) > 0:
-            self._console.print(
-                'The following system services will be [bold]enabled[/bold]:', style='yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + service for service in status.system_to_enable], sep='\n', highlight=False)
-            self._console.line()
-
-        if len(status.system_to_disable) > 0:
-            self._console.print(
-                'The following system services will be [bold]disabled[/bold]:', style='yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + service for service in status.system_to_disable], sep='\n', highlight=False)
-            self._console.line()
-
-        if len(status.user_to_enable) > 0:
-            self._console.print(
-                'The following user services will be [bold]enabled[/bold]:', style='yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + service for service in status.user_to_enable], sep='\n', highlight=False)
-            self._console.line()
-
-        if len(status.user_to_disable) > 0:
-            self._console.print(
-                'The following user services will be [bold]disabled[/bold]:', style='yellow')
-            self._console.print(
-                *['[bold]·[/bold] ' + service for service in status.user_to_disable], sep='\n', highlight=False)
-            self._console.line()
+        sync = ServicesSync(status, self._console)
+        sync.print_summary()
 
         answer = Prompt.ask('Do you want to continue?', choices=[
                             'yes', 'no'], default='yes', case_sensitive=False)
         if answer != 'yes':
             return
 
-        for service in status.system_to_enable:
-            self._console.print(f'Enabling {service}...', end='')
-            self._systemd.enable_service(service)
-            self._console.print(' Done!')
-
-        for service in status.user_to_enable:
-            self._console.print(f'Enabling {service}...', end='')
-            self._systemd.enable_service(service, user=True)
-            self._console.print(' Done!')
-
-        for service in status.system_to_disable:
-            self._console.print(f'Disbling {service}...', end='')
-            self._systemd.disable_service(service)
-            self._console.print(' Done!')
-
-        for service in status.user_to_disable:
-            self._console.print(f'Disbling {service}...', end='')
-            self._systemd.disable_service(service, user=True)
-            self._console.print(' Done!')
+        sync.run(self._systemd)
