@@ -114,9 +114,10 @@ class PackageSync:
                 for task in tasks:
                     task.command()
                     progress.advance(task.task)
-        except YayNotInstalledException:
+        except YayNotInstalledException as e:
             self._console.print(
                 "Could not install AUR packages, [bold]yay[/bold] is not installed", style='red')
+            raise e
 
     def _run_hooks(self, hooks_path: str) -> None:
         status = self._status
