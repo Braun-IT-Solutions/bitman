@@ -8,12 +8,12 @@ class Ufw:
     def __init__(self):
         self._rules: list[UfwRule] | None = None
         self._default_rules: tuple[DefaultUfwRule, DefaultUfwRule] | None = None
-        self._current_verbose = None
-        self._current_numbered_status = None
+        self._cached_current_verbose = None
+        self._cached_current_numbered_status = None
 
     def update_status(self):
-        self._current_verbose = self._verbose_status()
-        self._current_numbered_status = self._numbered_status()
+        self._cached_current_verbose = self._verbose_status()
+        self._cached_current_numbered_status = self._numbered_status()
 
     def is_enabled(self) -> bool:
         return 'Status: active' in self._current_verbose
@@ -158,6 +158,18 @@ class Ufw:
         )
         result.check_returncode()
         return result.stdout
+
+    @property
+    def _current_verbose(self) -> str:
+        if self._cached_current_verbose is None:
+            self._cached_current_verbose = self._verbose_status()
+        return self._cached_current_verbose
+
+    @property
+    def _current_numbered_status(self) -> str:
+        if self._cached_current_numbered_status is None:
+            self._cached_current_numbered_status = self._numbered_status()
+        return self._cached_current_numbered_status
 
 
 class UfwStatusParseException(BaseException):
