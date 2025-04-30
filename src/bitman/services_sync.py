@@ -1,6 +1,7 @@
 from typing import NamedTuple
 from rich.console import Console
 
+from bitman.config.system_config import SystemConfig
 from bitman.service import Systemd
 
 
@@ -16,7 +17,28 @@ class ServicesSync:
         self._status = status
         self._console = console
 
+    def print_status(self, systemd: Systemd, system_config: SystemConfig) -> None:
+        """Prints the status of the currently configured services"""
+        services = system_config.system_services()
+        self._console.print('\nSystem Services:', style='bold white')
+        for service in services:
+            service_enabled = systemd.service_enabled(service.service)
+            running = systemd.service_running(service.service)
+            should_be_enabled = service.desired_state == 'enable'
+            self._console.print(
+                f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')
+
+        user_services = system_config.user_services()
+        self._console.print('\nUser Services:', style='bold white')
+        for service in user_services:
+            service_enabled = systemd.service_enabled(service.service, user=True)
+            running = systemd.service_running(service.service, user=True)
+            should_be_enabled = service.desired_state == 'enable'
+            self._console.print(
+                f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')
+
     def print_summary(self) -> None:
+        """Prints the pre-sync summary of the changes that will be made"""
         status = self._status
 
         if len(status.system_to_disable) == 0 and len(status.system_to_enable) == 0 and len(status.user_to_disable) == 0 and len(status.user_to_enable) == 0:
@@ -52,6 +74,7 @@ class ServicesSync:
             self._console.line()
 
     def run(self, systemd: Systemd) -> None:
+        """Enables and disables services to make them match the configuration"""
         status = self._status
 
         for service in status.system_to_enable:

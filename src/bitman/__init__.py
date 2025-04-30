@@ -8,7 +8,9 @@ from bitman.config.system_config import SystemConfig
 from bitman.git import Git
 from bitman.package.pacman import Pacman
 from bitman.package.yay import Yay
+from bitman.package_sync import PackageSync
 from bitman.service import Systemd
+from bitman.services_sync import ServicesSync
 from bitman.setup import Setup
 from bitman.sync import Sync, SyncScope, PackageSyncStatus
 from bitman.ufw import Ufw
@@ -78,13 +80,15 @@ class Bitman:
 
         scope = SyncScope(args)
         if args.status:
-            status = self._sync.package_status()
-
             if scope.packages:
-                self._print_package_status(status)
+                status = self._sync.package_status()
+                sync = PackageSync(status, self._console)
+                sync.print_status()
 
             if scope.services:
-                self._print_service_status()
+                status = self._sync.service_status()
+                sync = ServicesSync(status, self._console)
+                sync.print_status(self._systemd, self._system_config)
 
             if scope.ufw:
                 self._print_ufw_status()
@@ -93,43 +97,6 @@ class Bitman:
 
     def _print_ufw_status(self) -> None:
         self._sync.print_ufw_status()
-
-    def _print_package_status(self, status: PackageSyncStatus) -> None:
-        if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
-            self._console.print('All packages are in sync', style='green')
-            return
-
-        self._console.print('Additional', style='bold yellow')
-        if len(status.additional) > 0:
-            self._console.print(
-                *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
-
-        self._console.print('\nMissing', style='bold red')
-        if len(status.missing_arch) > 0:
-            self._console.print(
-                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
-        if len(status.missing_aur) > 0:
-            self._console.print(*['[bold]·[/bold] ' + line +
-                                  ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
-
-    def _print_service_status(self) -> None:
-        services = self._system_config.system_services()
-        self._console.print('\nSystem Services:', style='bold white')
-        for service in services:
-            service_enabled = self._systemd.service_enabled(service.service)
-            running = self._systemd.service_running(service.service)
-            should_be_enabled = service.desired_state == 'enable'
-            self._console.print(
-                f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')
-
-        user_services = self._system_config.user_services()
-        self._console.print('\nUser Services:', style='bold white')
-        for service in user_services:
-            service_enabled = self._systemd.service_enabled(service.service, user=True)
-            running = self._systemd.service_running(service.service, user=True)
-            should_be_enabled = service.desired_state == 'enable'
-            self._console.print(
-                f'[bold]{'[green]✔[/green]' if service_enabled == should_be_enabled else '[red]❌[/red]'}[/bold] {service.service} is [bold]{'enabled' if service_enabled else 'disabled'}[/bold] {'and [bold]running[/bold]' if running else 'but [bold]not running[/bold]'} (should be {service.desired_state}d)')
 
     def install(self, args: Namespace) -> None:
         """Processes bitman user install command"""

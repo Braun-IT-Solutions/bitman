@@ -25,10 +25,30 @@ class PackageSyncStatus(NamedTuple):
 
 
 class PackageSync:
-    def __init__(self, status: PackageSyncStatus, console: Console, hooks_path: str):
+    def __init__(self, status: PackageSyncStatus, console: Console):
         self._status = status
         self._console = console
-        self._hooks_path = hooks_path
+
+    def print_status(self) -> None:
+        """Prints the status of the currently configured packages"""
+        status = self._status
+
+        if len(status.additional) == 0 and len(status.missing_aur) == 0 and len(status.missing_arch) == 0:
+            self._console.print('All packages are in sync', style='green')
+            return
+
+        self._console.print('Additional', style='bold yellow')
+        if len(status.additional) > 0:
+            self._console.print(
+                *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
+
+        self._console.print('\nMissing', style='bold red')
+        if len(status.missing_arch) > 0:
+            self._console.print(
+                *['[bold]·[/bold] ' + line for line in status.missing_arch], sep='\n', highlight=False)
+        if len(status.missing_aur) > 0:
+            self._console.print(*['[bold]·[/bold] ' + line +
+                                  ' (AUR)' for line in status.missing_aur], sep='\n', highlight=False)
 
     def print_summary(self) -> None:
         """Prints which changes will be made to the installed packages if sync is run"""
@@ -56,10 +76,10 @@ class PackageSync:
                 *['[bold]·[/bold] ' + line for line in status.additional], sep='\n')
             console.line()
 
-    def run(self, pacman: Pacman, yay: Yay) -> None:
+    def run(self, pacman: Pacman, yay: Yay, hooks_path: str) -> None:
         """Executes package sync"""
         self._run_installs(pacman, yay)
-        self._run_hooks()
+        self._run_hooks(hooks_path)
 
     def _run_installs(self, pacman: Pacman, yay: Yay) -> None:
         progress = Progress(
@@ -98,9 +118,8 @@ class PackageSync:
             self._console.print(
                 "Could not install AUR packages, [bold]yay[/bold] is not installed", style='red')
 
-    def _run_hooks(self) -> None:
+    def _run_hooks(self, hooks_path: str) -> None:
         status = self._status
-        hooks_path = self._hooks_path
         console = self._console
 
         for package in status.additional:

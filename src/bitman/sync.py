@@ -111,7 +111,7 @@ class Sync:
     def _run_packages(self) -> None:
         status = self.package_status()
 
-        sync = PackageSync(status, self._console, self._system_config.hooks_directory())
+        sync = PackageSync(status, self._console)
         sync.print_summary()
 
         answer = Prompt.ask('Do you want to continue?', choices=[
@@ -119,7 +119,7 @@ class Sync:
         if answer != 'yes':
             return
 
-        sync.run(self._pacman, self._yay)
+        sync.run(self._pacman, self._yay, self._system_config.hooks_directory())
 
     def _run_services(self) -> None:
         status = self.service_status()
