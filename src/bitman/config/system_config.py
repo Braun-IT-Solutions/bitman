@@ -3,6 +3,7 @@ from typing import Generator
 
 from bitman.config.service_config import ServiceConfig
 from . import SYSTEM_CONFIG_PATH
+from ufw_rule import UfwRule, DefaultUfwRule
 
 
 class SystemConfig:
@@ -12,6 +13,7 @@ class SystemConfig:
         self._aur_packages_path = join(self._config_directory, 'aur.packages')
         self._services_path = join(self._config_directory, 'services.conf')
         self._symlinks_file_path = join(self._config_directory, 'user', 'symlinks')
+        self._ufw_rules_path = join(self._config_directory, 'ufw.conf')
 
     @property
     def user_config_directory(self) -> str:
@@ -40,6 +42,42 @@ class SystemConfig:
                         yield line
         except IOError:
             yield from []
+
+    def ufw_rules(self) -> Generator[UfwRule, None, None]:
+        yield from self._parsed_ufw_rules()
+
+    def default_ufw_rules(self) -> Generator[UfwRule, None, None]:
+        yield from self._parsed_default_ufw_rules()
+
+    def _parsed_ufw_rules(self):
+        with open(self._ufw_rules_path, 'rt', encoding='utf-8') as config_file:
+            is_rule_block = False
+            for line in config_file:
+                line = line.strip()
+                if line.startswith('#') or line == '':
+                    continue
+                if not is_rule_block and '[rules]' in line.lower():
+                    is_rule_block = True
+                    continue
+                if is_rule_block and line.startswith('['):
+                    break
+                if is_rule_block:
+                    yield UfwRule.fromBitmanConfig(line)
+
+    def _parsed_default_ufw_rules(self) -> Generator[DefaultUfwRule, None, None]:
+        with open(self._ufw_rules_path, 'rt', encoding='utf-8') as config_file:
+            is_rule_block = False
+            for line in config_file:
+                line = line.strip()
+                if line.startswith('#') or line == '':
+                    continue
+                if not is_rule_block and '[default]' in line.lower():
+                    is_rule_block = True
+                    continue
+                if is_rule_block and line.startswith('['):
+                    break
+                if is_rule_block:
+                    yield DefaultUfwRule.fromBitmanConfig(line)
 
     def _parsed_services(self, category: str) -> Generator[ServiceConfig, None, None]:
         try:
