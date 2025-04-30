@@ -16,7 +16,7 @@ class Bitman:
         self._ufw = Ufw()
         self._yay = Yay()
         self._systemd = Systemd()
-        self._sync = Sync(self._system_config, self._pacman, self._yay, self._systemd)
+        self._sync = Sync(self._system_config, self._pacman, self._yay, self._systemd, self._ufw)
         self._console = Console()
 
     def sync(self, args: Namespace) -> None:
