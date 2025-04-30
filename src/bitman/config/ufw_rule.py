@@ -37,6 +37,9 @@ class DefaultUfwRule:
             DefaultUfwRule('out', 'allow' if is_allow_out else 'deny')
         )
 
+    def __str__(self) -> str:
+        return f"{self.rule} ({self.type})"
+
 
 class UfwRule:
     index: int | None
@@ -112,6 +115,9 @@ class UfwRule:
         if from_ip == '':
             raise UfwStatusParseException(f"Invalid UFW status from_ip: {from_ip}")
         return UfwRule(int(index), type, rule, proto, port, from_ip)
+
+    def __str__(self) -> str:
+        return f"{self.port}/{self.proto} {self.rule} {self.type} {self.from_ip}"
 
 
 class UfwConfigParseException(BaseException):
