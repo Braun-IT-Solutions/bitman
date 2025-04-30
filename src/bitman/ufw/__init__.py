@@ -8,8 +8,8 @@ class Ufw:
     def __init__(self):
         self._rules: list[UfwRule] | None = None
         self._default_rules: tuple[DefaultUfwRule, DefaultUfwRule] | None = None
-        self._current_verbose = self._verbose_status()
-        self._current_numbered_status = self._numbered_status()
+        self._current_verbose = None
+        self._current_numbered_status = None
 
     def update_status(self):
         self._current_verbose = self._verbose_status()
